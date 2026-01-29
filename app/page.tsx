@@ -11,6 +11,16 @@ interface Piloto {
   janela_id: string;
 }
 
+type Categoria = 'acrobatico' | 'escala' | 'jato';
+
+const getCorPorCategoria = (categoria?: string): string => {
+  const cat = categoria?.toLowerCase() as Categoria | undefined;
+  if (cat === 'acrobatico') return 'bg-red-600 border-red-400';
+  if (cat === 'escala') return 'bg-blue-600 border-blue-400';
+  if (cat === 'jato') return 'bg-green-600 border-green-400';
+  return 'bg-gray-700 border-gray-500';
+};
+
 export default function PainelBoxes() {
   const [janelaAtual, setJanelaAtual] = useState<Piloto[] | null>(null);
   const [janelasFila, setJanelasFila] = useState<Piloto[][]>([]);
@@ -29,6 +39,22 @@ export default function PainelBoxes() {
     };
 
     carregarDados();
+
+    const canal = supabase
+      .channel('mudancas_na_pista') // Nome qualquer para o canal
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuta TUDO (Insert, Update, Delete)
+          schema: 'public',
+          table: 'pilotos'
+        },
+        (payload) => {
+          console.log('Mudança detectada!', payload);
+          carregarDados(); // Quando o banco mudar, ele chama a função de carregar de novo
+        }
+      )
+      .subscribe();
 
     // Inscrição Realtime
     const subscription = supabase
@@ -63,36 +89,32 @@ export default function PainelBoxes() {
     return () => clearInterval(timer);
   }, [janelasFila]);
 
-
-
-
-  // ... (Continua abaixo com o JSX)
-
-
-
   return (
     <div className="min-h-screen bg-black text-white p-8 flex flex-col font-sans uppercase">
       {/* SEÇÃO JANELA ATUAL */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4 tracking-widest text-gray-300">JANELA ATUAL</h1>
-        {janelaAtual ? (
-          <div className="bg-red-600 rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-7xl font-black mb-8">{janelaAtual[0].categoria}</h2>
-            <div className="flex justify-center gap-6">
-              {janelaAtual.sort((a: Piloto, b: Piloto) => a.senha - b.senha).map((p: Piloto) => (
-                <div key={p.id} className="bg-white text-black p-4 rounded-2xl w-48 shadow-inner">
-                  <div className="text-6xl font-black">{p.senha}</div>
-                  <div className="text-xl font-bold mt-2 truncate">{p.nome}</div>
+        {janelaAtual && (
+          <div className={`${getCorPorCategoria(janelaAtual[0].categoria)} rounded-3xl p-8 shadow-2xl transition-colors duration-500 border-b-8`}>
+            <h2 className="text-8xl font-black mb-8 drop-shadow-lg">
+              {janelaAtual[0].categoria.toUpperCase()}
+            </h2>
+            <div className="flex justify-center gap-8">
+              {janelaAtual.map(p => (
+                <div key={p.id} className="bg-white text-black p-5 rounded-3xl w-56 shadow-2xl transform scale-110">
+                  <div className="text-7xl font-black">{p.senha}</div>
+                  <div className="text-2xl font-bold mt-2 truncate">{p.nome}</div>
                 </div>
               ))}
             </div>
           </div>
-        ) : (
-          <div className="text-6xl text-gray-700 animate-pulse mt-20">PISTA LIVRE</div>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-end pb-12 overflow-hidden">
+      {/* Timer po */}
+
+
+      <div className="flex-1 flex flex-col justify-end pb-4 overflow-hidden">
         <h3 className="text-center text-3xl font-bold mb-6 text-gray-400">Próximas janelas</h3>
 
         <div className="relative h-64 w-full">
@@ -100,17 +122,19 @@ export default function PainelBoxes() {
             <div
               key={i}
               className={`absolute inset-0 flex justify-center transition-all duration-1000 ease-in-out transform ${i === indexCarrossel
-                  ? "translate-x-0 opacity-100"
-                  : "translate-x-full opacity-0"
+                ? "translate-x-0 opacity-100"
+                : "translate-x-full opacity-0"
                 }`}
             >
-              <div className="bg-blue-700 rounded-3xl p-6 w-3/4 flex flex-col items-center border-4 border-blue-500">
-                <h4 className="text-4xl font-bold mb-4">{grupo[0].categoria}</h4>
+              <div className={`${getCorPorCategoria(grupo[0].categoria)} rounded-3xl p-8 w-3/4 flex flex-col items-center border-4 shadow-xl`}>
+                <h4 className="text-5xl font-bold mb-6 drop-shadow-md">
+                  {grupo[0].categoria.toUpperCase()}
+                </h4>
                 <div className="flex gap-6">
                   {grupo.map(p => (
-                    <div key={p.id} className="bg-white text-black p-3 rounded-2xl w-36 text-center shadow-lg">
-                      <div className="text-4xl font-black leading-none">{p.senha}</div>
-                      <div className="text-sm font-bold truncate mt-1">{p.nome}</div>
+                    <div key={p.id} className="bg-white text-black p-4 rounded-2xl w-40 text-center shadow-lg">
+                      <div className="text-5xl font-black">{p.senha}</div>
+                      <div className="text-lg font-bold truncate mt-1">{p.nome}</div>
                     </div>
                   ))}
                 </div>
@@ -124,7 +148,7 @@ export default function PainelBoxes() {
           {janelasFila.map((_, i) => (
             <div
               key={i}
-              className={`h-4 rounded-full transition-all duration-500 ${i === indexCarrossel ? 'bg-blue-500 w-16' : 'bg-gray-800 w-4'
+              className={`h-4 rounded-full transition-all duration-500 ${i === indexCarrossel ? 'bg-white w-16' : 'bg-gray-800 w-4'
                 }`}
             />
           ))}
