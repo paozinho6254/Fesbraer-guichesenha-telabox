@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 
 interface Piloto {
-  id: string;
+  id: string | number;
   nome: string;
   senha: number;
   categoria: string;
@@ -26,7 +26,6 @@ export default function PainelBoxes() {
   const [janelasFila, setJanelasFila] = useState<Piloto[][]>([]);
   const [indexCarrossel, setIndexCarrossel] = useState(0);
 
-  // 1. ESCUTAR MUDANÇAS EM TEMPO REAL
   useEffect(() => {
     const carregarDados = async () => {
       const { data } = await supabase
@@ -40,23 +39,6 @@ export default function PainelBoxes() {
 
     carregarDados();
 
-    const canal = supabase
-      .channel('mudancas_na_pista') // Nome qualquer para o canal
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escuta TUDO (Insert, Update, Delete)
-          schema: 'public',
-          table: 'pilotos'
-        },
-        (payload) => {
-          console.log('Mudança detectada!', payload);
-          carregarDados(); // Quando o banco mudar, ele chama a função de carregar de novo
-        }
-      )
-      .subscribe();
-
-    // Inscrição Realtime
     const subscription = supabase
       .channel('mudancas-pista')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pilotos' }, carregarDados)
@@ -67,7 +49,6 @@ export default function PainelBoxes() {
     };
   }, []);
 
-  // 2. LOGICA DE AGRUPAMENTO
   const organizarJanelas = (pilotos: Piloto[]) => {
     const grupos = pilotos.reduce((acc: Record<string, Piloto[]>, p: Piloto) => {
       if (!acc[p.janela_id]) acc[p.janela_id] = [];
@@ -80,7 +61,6 @@ export default function PainelBoxes() {
     setJanelasFila(listaOrdenada.slice(1) || []);
   };
 
-  // 3. TIMER DO CARROSSEL (10 SEGUNDOS)
   useEffect(() => {
     if (janelasFila.length <= 1) return;
     const timer = setInterval(() => {
@@ -90,20 +70,30 @@ export default function PainelBoxes() {
   }, [janelasFila]);
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 flex flex-col font-sans uppercase">
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex flex-col font-sans uppercase overflow-x-hidden">
+
       {/* SEÇÃO JANELA ATUAL */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4 tracking-widest text-gray-300">JANELA ATUAL</h1>
+      <div className="text-center mb-6 md:mb-12">
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 tracking-widest text-gray-300">JANELA ATUAL</h1>
+
         {janelaAtual && (
-          <div className={`${getCorPorCategoria(janelaAtual[0].categoria)} rounded-3xl p-8 shadow-2xl transition-colors duration-500 border-b-8`}>
-            <h2 className="text-8xl font-black mb-8 drop-shadow-lg">
+          <div className={`${getCorPorCategoria(janelaAtual[0].categoria)} rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-2xl border-b-4 md:border-b-8`}>
+            <h2 className="text-4xl md:text-8xl font-black mb-4 md:mb-8 drop-shadow-lg">
               {janelaAtual[0].categoria.toUpperCase()}
             </h2>
-            <div className="flex justify-center gap-8">
+
+            {/* Grid adaptável: 1 coluna no celular, várias no PC */}
+            <div className="flex flex-row w-full justify-center gap-3 md:gap-6 px-2 md:px-6">
               {janelaAtual.map(p => (
-                <div key={p.id} className="bg-white text-black p-5 rounded-3xl w-56 shadow-2xl transform scale-110">
-                  <div className="text-7xl font-black">{p.senha}</div>
-                  <div className="text-2xl font-bold mt-2 truncate">{p.nome}</div>
+                <div
+                  key={p.id}
+                  className="bg-white text-black p-3 md:p-5 rounded-2xl md:rounded-3xl shadow-2xl flex-1 min-w-0"
+                >
+                  {/* flex-1 acima faz ele esticar. min-w-0 evita que nomes longos quebrem o layout */}
+                  <div className="text-4xl md:text-7xl font-black">{p.senha}</div>
+                  <div className="text-sm md:text-2xl font-bold mt-1 md:mt-2 truncate">
+                    {p.nome}
+                  </div>
                 </div>
               ))}
             </div>
@@ -111,44 +101,44 @@ export default function PainelBoxes() {
         )}
       </div>
 
-      {/* Timer po */}
+      {/* SEÇÃO PRÓXIMAS JANELAS */}
+      <div className="flex-1 flex flex-col justify-end pb-4">
+        <h3 className="text-center text-xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-400 italic">Próximas janelas</h3>
 
-
-      <div className="flex-1 flex flex-col justify-end pb-4 overflow-hidden">
-        <h3 className="text-center text-3xl font-bold mb-6 text-gray-400">Próximas janelas</h3>
-
-        <div className="relative h-64 w-full">
-          {janelasFila.map((grupo, i) => (
-            <div
-              key={i}
-              className={`absolute inset-0 flex justify-center transition-all duration-1000 ease-in-out transform ${i === indexCarrossel
-                ? "translate-x-0 opacity-100"
-                : "translate-x-full opacity-0"
-                }`}
-            >
-              <div className={`${getCorPorCategoria(grupo[0].categoria)} rounded-3xl p-8 w-3/4 flex flex-col items-center border-4 shadow-xl`}>
-                <h4 className="text-5xl font-bold mb-6 drop-shadow-md">
-                  {grupo[0].categoria.toUpperCase()}
-                </h4>
-                <div className="flex gap-6">
-                  {grupo.map(p => (
-                    <div key={p.id} className="bg-white text-black p-4 rounded-2xl w-40 text-center shadow-lg">
-                      <div className="text-5xl font-black">{p.senha}</div>
-                      <div className="text-lg font-bold truncate mt-1">{p.nome}</div>
-                    </div>
-                  ))}
+        <div className="relative h-48 md:h-64 w-full">
+          {janelasFila.length > 0 ? (
+            janelasFila.map((grupo, i) => (
+              <div
+                key={i}
+                className={`absolute inset-0 flex justify-center transition-all duration-1000 ease-in-out transform ${i === indexCarrossel ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+                  }`}
+              >
+                <div className={`${getCorPorCategoria(grupo[0].categoria)} rounded-2xl md:rounded-3xl p-4 md:p-8 w-full md:w-3/4 flex flex-col items-center border-2 md:border-4 shadow-xl`}>
+                  <h4 className="text-2xl md:text-5xl font-bold mb-3 md:mb-6 drop-shadow-md">
+                    {grupo[0].categoria.toUpperCase()}
+                  </h4>
+                  <div className="flex flex-row w-full justify-center gap-2 md:gap-6">
+                    {grupo.map(p => (
+                      <div key={p.id} className="bg-white text-black p-2 md:p-4 rounded-xl md:rounded-2xl flex-1 min-w-0 text-center shadow-lg">
+                        <div className="text-3xl md:text-5xl font-black">{p.senha}</div>
+                        <div className="text-[12px] md:text-lg font-bold truncate mt-1">{p.nome}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="text-center text-gray-600 text-xl">Fila vazia</div>
+          )}
         </div>
 
-        {/* DOTS */}
-        <div className="flex justify-center gap-4 mt-8">
+        {/* DOTS / INDICADORES */}
+        <div className="flex justify-center gap-2 md:gap-4 mt-4 md:mt-8">
           {janelasFila.map((_, i) => (
             <div
               key={i}
-              className={`h-4 rounded-full transition-all duration-500 ${i === indexCarrossel ? 'bg-white w-16' : 'bg-gray-800 w-4'
+              className={`h-2 md:h-4 rounded-full transition-all duration-500 ${i === indexCarrossel ? 'bg-white w-8 md:w-16' : 'bg-gray-800 w-2 md:w-4'
                 }`}
             />
           ))}
