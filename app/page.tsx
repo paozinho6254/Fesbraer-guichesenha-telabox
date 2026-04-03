@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from './lib/supabase';
 
 interface Piloto {
@@ -9,6 +9,7 @@ interface Piloto {
   senha: number;
   categoria: string;
   janela_id: string;
+  status: string;
   timer_final?: string;
   timer_ativo?: boolean;
   segundos_restantes?: number;
@@ -53,6 +54,14 @@ export default function PainelBoxes() {
   }, []);
 
   const organizarJanelas = (pilotos: Piloto[]) => {
+    console.log("📦 Pilotos recebidos:", pilotos.map(p => ({
+      id: p.id,
+      nome: p.nome,
+      status: p.status,
+      janela_id: p.janela_id,
+      timer_ativo: p.timer_ativo,
+      segundos_restantes: p.segundos_restantes,
+    })));
     const grupos = pilotos.reduce((acc: Record<string, Piloto[]>, p: Piloto) => {
       if (!acc[p.janela_id]) acc[p.janela_id] = [];
       acc[p.janela_id].push(p);
@@ -64,26 +73,47 @@ export default function PainelBoxes() {
     setJanelasFila(listaOrdenada.slice(1) || []);
   };
 
+  const janelaAtualRef = useRef(janelaAtual);
+
+  useEffect(() => {
+    janelaAtualRef.current = janelaAtual;
+  }, [janelaAtual]);
+
   // --- LÓGICA DO CRONÔMETRO SINCRONIZADO ---
   useEffect(() => {
-    const interval = setInterval(() => {
-      const p = janelaAtual?.[0];
+    if (!janelaAtual || janelaAtual.length === 0) {
+      setTempoDisplay("00:10:00");
+      return;
+    }
 
-      // Se não houver piloto ou o timer não estiver ativo no banco
-      if (!p?.timer_final || !p?.timer_ativo) {
-        const s = p?.segundos_restantes || 0;
-        setTempoDisplay(formatarSegundos(s));
+    const p = janelaAtual[0];
+    console.log("🔄 useEffect disparou — id:", p?.id, "| janela_id:", p?.janela_id, "| timer_ativo:", p?.timer_ativo);
+
+    const atualizarVisor = () => {
+      console.log("⏱ atualizarVisor — timer_ativo:", p.timer_ativo, "| timer_final:", p.timer_final, "| segundos_restantes:", p.segundos_restantes);
+
+
+      if (p.timer_ativo === false) {
+        setTempoDisplay(formatarSegundos(p.segundos_restantes ?? 600));
+        return;
+      }
+
+      if (!p.timer_final) {
+        setTempoDisplay(formatarSegundos(p.segundos_restantes ?? 600));
         return;
       }
 
       const agora = new Date().getTime();
       const final = new Date(p.timer_final).getTime();
-      const diffSegundos = Math.max(0, Math.floor((final - agora) / 1000));
+      const diff = Math.max(0, Math.floor((final - agora) / 1000));
+      setTempoDisplay(formatarSegundos(diff));
+      if (diff <= 0) clearInterval(interval);
+    };
 
-      setTempoDisplay(formatarSegundos(diffSegundos));
-    }, 1000);
-
+    atualizarVisor();
+    const interval = setInterval(atualizarVisor, 1000);
     return () => clearInterval(interval);
+
   }, [janelaAtual]);
 
   const formatarSegundos = (totalSegundos: number) => {
