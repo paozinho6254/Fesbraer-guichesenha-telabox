@@ -9,9 +9,9 @@ interface Piloto {
   senha: number;
   categoria: string;
   janela_id: string;
-  timer_final?: string;    // Campo vindo do banco
-  timer_ativo?: boolean;   // Campo vindo do banco
-  segundos_restantes?: number; // Valor estático quando pausado
+  timer_final?: string;
+  timer_ativo?: boolean;
+  segundos_restantes?: number;
 }
 
 type Categoria = 'acrobatico' | 'escala' | 'jato';
@@ -107,7 +107,7 @@ export default function PainelBoxes() {
 
       {/* SEÇÃO JANELA ATUAL */}
       <div className="text-center mb-6 md:mb-12">
-        <h1 className="text-xl md:text-2xl font-bold mb-4 tracking-widest text-gray-500">JANELA ATUAL</h1>
+        <h1 className="text-xl md:text-4xl font-bold mb-4 tracking-widest text-white-500">JANELA ATUAL</h1>
 
         {janelaAtual && (
           <div className={`${getCorPorCategoria(janelaAtual[0].categoria)} rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-2xl border-b-4 md:border-b-8`}>
@@ -119,7 +119,7 @@ export default function PainelBoxes() {
               {janelaAtual.map(p => (
                 <div
                   key={p.id}
-                  className="bg-white text-black p-3 md:p-5 rounded-2xl md:rounded-3xl shadow-2xl flex-1 min-w-0"
+                  className="bg-white text-black p-3 md:p-7 rounded-2xl md:rounded-3xl shadow-2xl flex-1 min-w-0"
                 >
                   <div className="text-4xl md:text-7xl font-black">{p.senha}</div>
                   <div className="text-sm md:text-2xl font-bold mt-1 md:mt-2 truncate">
@@ -134,11 +134,11 @@ export default function PainelBoxes() {
 
       {/* SEÇÃO CRONOMETRO */}
       <div className="flex flex-col items-center mt-5 mb-13">
-        <div className="text-sm md:text-6xl tracking-tighter">
+        <div className="text-sm md:text-4xl tracking-tighter">
           TEMPO RESTANTE
         </div>
         <div className="rounded-b-3xl shadow-[0_0_50px_rgba(255,255,255,0.05)]">
-          <span className="text-6xl md:text-9xl font-black text-white tabular-nums tracking-tighter">
+          <span className="text-6xl md:text-7xl font-black text-white tabular-nums tracking-tighter">
             {tempoDisplay}
           </span>
         </div>
@@ -146,9 +146,11 @@ export default function PainelBoxes() {
 
       {/* SEÇÃO PRÓXIMAS JANELAS */}
       <div className="flex-1 flex flex-col justify-end pb-4">
-        <h3 className="text-center text-xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-400 italic">Próximas janelas</h3>
+        <h3 className="text-center text-xl md:text-3xl font-bold mb-4 md:mb-6 text-gray-400">
+          Próximas janelas {janelasFila.length > 0 && `(1 de ${janelasFila.length})`}
+        </h3>
 
-        <div className="relative h-48 md:h-64 w-full">
+        <div className="relative h-48 md:h-72 w-full">
           {janelasFila.length > 0 ? (
             janelasFila.map((grupo, i) => (
               <div
@@ -162,7 +164,7 @@ export default function PainelBoxes() {
                   </h4>
                   <div className="flex flex-row w-full justify-center gap-2 md:gap-6">
                     {grupo.map(p => (
-                      <div key={p.id} className="bg-white text-black p-2 md:p-4 rounded-xl md:rounded-2xl flex-1 min-w-0 text-center shadow-lg">
+                      <div key={p.id} className="bg-white text-black p-2 md:p-8 rounded-xl md:rounded-2xl flex-1 min-w-0 text-center shadow-lg">
                         <div className="text-3xl md:text-5xl font-black">{p.senha}</div>
                         <div className="text-[12px] md:text-lg font-bold truncate mt-1">{p.nome}</div>
                       </div>
@@ -175,14 +177,25 @@ export default function PainelBoxes() {
             <div className="text-center text-gray-600 text-xl">Fila vazia</div>
           )}
         </div>
-
-        {/* DOTS */}
-        <div className="flex justify-center gap-2 md:gap-4 mt-4 md:mt-8">
+        {/* DOTS / INDICADORES NUMERADOS */}
+        <div className="flex justify-center gap-3 md:gap-5 mt-4 md:mt-10">
           {janelasFila.map((_, i) => (
             <div
               key={i}
-              className={`h-2 md:h-4 rounded-full transition-all duration-500 ${i === indexCarrossel ? 'bg-white w-8 md:w-16' : 'bg-gray500 w-4 md:w-8'}`}
-            />
+              className={`
+        flex items-center justify-center 
+        h-8 w-8 md:h-14 md:w-14 
+        rounded-xl md:rounded-2xl 
+        font-black text-sm md:text-2xl 
+        transition-all duration-500 border-2
+        ${i === indexCarrossel
+                  ? 'bg-white text-black border-white scale-110 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
+                  : 'bg-zinc-900 text-zinc-600 border-zinc-800'
+                }
+      `}
+            >
+              {i + 1}
+            </div>
           ))}
         </div>
       </div>
