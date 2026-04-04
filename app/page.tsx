@@ -104,8 +104,8 @@ export default function PainelBoxes() {
       }
 
       const agora = new Date().getTime();
-      const final = new Date(p.timer_final).getTime();
-      const diff = Math.max(0, Math.floor((final - agora) / 1000));
+      const tempoFinal = new Date(p.timer_final).getTime();
+      const diff = Math.max(0, Math.floor((tempoFinal - agora) / 1000));
       setTempoDisplay(formatarSegundos(diff));
       if (diff <= 0) clearInterval(interval);
     };
