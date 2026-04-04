@@ -89,9 +89,19 @@ export default function PainelBoxes() {
     const p = janelaAtual[0];
     console.log("🔄 useEffect disparou — id:", p?.id, "| janela_id:", p?.janela_id, "| timer_ativo:", p?.timer_ativo);
 
+    if (!p.timer_ativo || !p.timer_final) {
+      setTempoDisplay(formatarSegundos(p.segundos_restantes ?? 600));
+      return;
+    }
+
     let interval: ReturnType<typeof setInterval>;
 
     const atualizarVisor = () => {
+      const p = janelaAtualRef.current?.[0];
+      if (!p) return;
+
+      console.log("⏱ atualizarVisor — timer_ativo:", p.timer_ativo, "| timer_final:", p.timer_final);
+
       if (p.timer_ativo === false) {
         setTempoDisplay(formatarSegundos(p.segundos_restantes ?? 600));
         return;
@@ -105,6 +115,9 @@ export default function PainelBoxes() {
       const agora = new Date().getTime();
       const tempoFinal = new Date(p.timer_final).getTime();
       const diff = Math.max(0, Math.floor((tempoFinal - agora) / 1000));
+
+      console.log("🕐 agora:", new Date().toISOString(), "| tempoFinal:", p.timer_final, "| diff:", diff);
+
       setTempoDisplay(formatarSegundos(diff));
       if (diff <= 0) clearInterval(interval);
     };
