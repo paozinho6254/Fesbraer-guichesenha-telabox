@@ -25,9 +25,14 @@ const getCorPorCategoria = (categoria?: string): string => {
   return 'bg-gray-700 border-gray-500';
 };
 
-const janelaAnteriorRef = useRef<Piloto[] | null>(null);
-
-const tocarBeep = () => {
+export default function PainelBoxes() {
+  const [janelaAtual, setJanelaAtual] = useState<Piloto[] | null>(null);
+  const [janelasFila, setJanelasFila] = useState<Piloto[][]>([]);
+  const [indexCarrossel, setIndexCarrossel] = useState(0);
+  const [tempoDisplay, setTempoDisplay] = useState("00:10:00");
+  const janelaAnteriorRef = useRef<Piloto[] | null>(null);
+  
+  const tocarBeep = () => {
   const ctx = new AudioContext();
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
@@ -43,12 +48,6 @@ const tocarBeep = () => {
   oscillator.start(ctx.currentTime);
   oscillator.stop(ctx.currentTime + 0.5);
 };
-
-export default function PainelBoxes() {
-  const [janelaAtual, setJanelaAtual] = useState<Piloto[] | null>(null);
-  const [janelasFila, setJanelasFila] = useState<Piloto[][]>([]);
-  const [indexCarrossel, setIndexCarrossel] = useState(0);
-  const [tempoDisplay, setTempoDisplay] = useState("00:10:00");
 
   // --- BUSCA INICIAL E REALTIME ---
   useEffect(() => {
