@@ -89,10 +89,9 @@ export default function PainelBoxes() {
     const p = janelaAtual[0];
     console.log("🔄 useEffect disparou — id:", p?.id, "| janela_id:", p?.janela_id, "| timer_ativo:", p?.timer_ativo);
 
+    let interval: ReturnType<typeof setInterval>;
+
     const atualizarVisor = () => {
-      console.log("⏱ atualizarVisor — timer_ativo:", p.timer_ativo, "| timer_final:", p.timer_final, "| segundos_restantes:", p.segundos_restantes);
-
-
       if (p.timer_ativo === false) {
         setTempoDisplay(formatarSegundos(p.segundos_restantes ?? 600));
         return;
@@ -111,7 +110,7 @@ export default function PainelBoxes() {
     };
 
     atualizarVisor();
-    const interval = setInterval(atualizarVisor, 1000);
+    interval = setInterval(atualizarVisor, 1000);
     return () => clearInterval(interval);
 
   }, [janelaAtual]);
