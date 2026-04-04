@@ -25,6 +25,25 @@ const getCorPorCategoria = (categoria?: string): string => {
   return 'bg-gray-700 border-gray-500';
 };
 
+const janelaAnteriorRef = useRef<Piloto[] | null>(null);
+
+const tocarBeep = () => {
+  const ctx = new AudioContext();
+  const oscillator = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(ctx.destination);
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+  gainNode.gain.setValueAtTime(1, ctx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+
+  oscillator.start(ctx.currentTime);
+  oscillator.stop(ctx.currentTime + 0.5);
+};
+
 export default function PainelBoxes() {
   const [janelaAtual, setJanelaAtual] = useState<Piloto[] | null>(null);
   const [janelasFila, setJanelasFila] = useState<Piloto[][]>([]);
@@ -53,20 +72,38 @@ export default function PainelBoxes() {
     return () => { supabase.removeChannel(subscription); };
   }, []);
 
-  const organizarJanelas = (pilotos: Piloto[]) => {
-    console.log("📦 Pilotos recebidos:", pilotos.map(p => ({
-      id: p.id,
-      nome: p.nome,
-      status: p.status,
-      janela_id: p.janela_id,
-      timer_ativo: p.timer_ativo,
-      segundos_restantes: p.segundos_restantes,
-    })));
-    const grupos = pilotos.reduce((acc: Record<string, Piloto[]>, p: Piloto) => {
-      if (!acc[p.janela_id]) acc[p.janela_id] = [];
-      acc[p.janela_id].push(p);
-      return acc;
-    }, {});
+const organizarJanelas = (pilotos: Piloto[]) => {
+  console.log("📦 Pilotos recebidos:", pilotos.map(p => ({
+    id: p.id,
+    nome: p.nome,
+    status: p.status,
+    janela_id: p.janela_id,
+    timer_ativo: p.timer_ativo,
+    segundos_restantes: p.segundos_restantes,
+  })));
+
+  const grupos = pilotos.reduce((acc: Record<string, Piloto[]>, p: Piloto) => {
+    if (!acc[p.janela_id]) acc[p.janela_id] = [];
+    acc[p.janela_id].push(p);
+    return acc;
+  }, {});
+
+  const listaOrdenada = Object.values(grupos);
+  const novaJanelaAtual = listaOrdenada[0] || null;
+
+  // ✅ Toca beep quando a janela muda
+  if (
+    janelaAnteriorRef.current &&
+    novaJanelaAtual &&
+    janelaAnteriorRef.current[0]?.janela_id !== novaJanelaAtual[0]?.janela_id
+  ) {
+    tocarBeep();
+  }
+
+  janelaAnteriorRef.current = novaJanelaAtual;
+  setJanelaAtual(novaJanelaAtual);
+  setJanelasFila(listaOrdenada.slice(1) || []);
+};
 
     const listaOrdenada = Object.values(grupos);
     setJanelaAtual(listaOrdenada[0] || null);
