@@ -162,7 +162,7 @@ export default function PainelBoxes() {
       </div>
 
       {/* SEÇÃO CRONOMETRO */}
-      <div className="flex flex-col items-center mb-10">
+      <div className="flex flex-col items-center mb-1">
         <div className="text-sm md:text-4xl tracking-tighter">
           TEMPO RESTANTE
         </div>
