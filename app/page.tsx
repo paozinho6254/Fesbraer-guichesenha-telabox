@@ -104,11 +104,6 @@ const organizarJanelas = (pilotos: Piloto[]) => {
   setJanelasFila(listaOrdenada.slice(1) || []);
 };
 
-    const listaOrdenada = Object.values(grupos);
-    setJanelaAtual(listaOrdenada[0] || null);
-    setJanelasFila(listaOrdenada.slice(1) || []);
-  };
-
   const janelaAtualRef = useRef(janelaAtual);
 
   useEffect(() => {
