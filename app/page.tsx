@@ -31,7 +31,7 @@ export default function PainelBoxes() {
   const [indexCarrossel, setIndexCarrossel] = useState(0);
   const [tempoDisplay, setTempoDisplay] = useState("00:10:00");
 
-  //Estados de audio
+  // Estados de audio para useEffects abaixo
   const [audioAtivado, setAudioAtivado] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const idJanelaAnterior = useRef<string | number | null>(null);
