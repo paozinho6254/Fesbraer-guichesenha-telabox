@@ -31,6 +31,11 @@ export default function PainelBoxes() {
   const [indexCarrossel, setIndexCarrossel] = useState(0);
   const [tempoDisplay, setTempoDisplay] = useState("00:10:00");
 
+  //Estados de audio
+  const [audioAtivado, setAudioAtivado] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const idJanelaAnterior = useRef<string | number | null>(null);
+
   // --- BUSCA INICIAL E REALTIME ---
   useEffect(() => {
     const carregarDados = async () => {
@@ -144,9 +149,53 @@ export default function PainelBoxes() {
     return () => clearInterval(timer);
   }, [janelasFila]);
 
+
+  // Inicializa o arquivo de áudio
+  useEffect(() => {
+    audioRef.current = new Audio('../../public/sons/beepsound.mp3');
+  }, []);
+
+  // --- LÓGICA PARA TOCAR O SOM NA MUDANÇA ---
+  useEffect(() => {
+    if (!janelaAtual || janelaAtual.length === 0 || !audioAtivado) return;
+
+    const idNovaJanela = janelaAtual[0].janela_id;
+
+    // Só toca se o ID da janela for diferente do que estava antes
+    if (idNovaJanela !== idJanelaAnterior.current) {
+      console.log("TROCA DE JANELA");
+
+      // Reinicia o áudio e toca
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(err => console.error("Erro ao tocar áudio:", err));
+      }
+
+      // Atualiza o ref para a nova janela
+      idJanelaAnterior.current = idNovaJanela;
+    }
+  }, [janelaAtual, audioAtivado]);
+
+
+
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8 flex flex-col font-sans uppercase overflow-x-hidden">
 
+      {/* OVERLAY DE DESBLOQUEIO DE ÁUDIO (Obrigatório para o Navegador) */}
+      {!audioAtivado && (
+        <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center">
+          <div className="text-center p-8 border-2 border-white/20 rounded-3xl bg-zinc-900 shadow-2xl">
+            <h2 className="text-3xl font-black mb-6 tracking-tighter">SISTEMA DE MONITORAMENTO</h2>
+            <p className="text-gray-400 mb-8 max-w-md">Para habilitar os alertas sonoros de troca de pista, clique no botão abaixo.</p>
+            <button
+              onClick={() => setAudioAtivado(true)}
+              className="bg-white text-black px-12 py-6 rounded-2xl font-black text-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+            >
+              INICIAR PAINEL
+            </button>
+          </div>
+        </div>
+      )}
       {/* SEÇÃO JANELA ATUAL */}
       <div className="text-center mb-6 md:mb-12">
         <h1 className="text-xl md:text-4xl font-bold mb-4 tracking-widest text-white-500">JANELA ATUAL</h1>
@@ -185,6 +234,8 @@ export default function PainelBoxes() {
           </span>
         </div>
       </div>
+
+
 
       {/* SEÇÃO PRÓXIMAS JANELAS */}
       <div className="flex-1 flex flex-col justify-end pb-4">
