@@ -152,27 +152,39 @@ export default function PainelBoxes() {
 
   // Inicializa o arquivo de áudio
   useEffect(() => {
-    audioRef.current = new Audio('../../public/sons/beepsound.mp3');
+    if (typeof window !== 'undefined') {
+      // SEMPRE use o caminho começando com / (raiz da pasta public)
+      const audio = new Audio('/sons/beepsound.mp3');
+      audio.preload = 'auto';
+
+      audio.oncanplaythrough = () => console.log("✅ Som de beep carregado!");
+      audio.onerror = (e) => console.error("❌ Erro ao carregar /sons/beepsound.mp3", e);
+
+      audioRef.current = audio;
+    }
   }, []);
 
-  // --- LÓGICA PARA TOCAR O SOM NA MUDANÇA ---
+  // 3. DISPARO DO SOM: Roda toda vez que os dados da janela mudarem
   useEffect(() => {
-    if (!janelaAtual || janelaAtual.length === 0 || !audioAtivado) return;
+    // Só tentamos tocar se: tivermos áudio, tivermos piloto e o usuário liberou o som (audioAtivado)
+    if (audioRef.current && janelaAtual && janelaAtual.length > 0 && audioAtivado) {
+      const idAtual = String(janelaAtual[0].janela_id);
 
-    const idNovaJanela = janelaAtual[0].janela_id;
+      // SÓ TOCA SE O ID MUDOU (para não apitar a cada segundo do cronômetro)
+      if (idAtual !== idJanelaAnterior.current) {
+        console.log("🔔 Nova janela detectada! Tocando beep...");
 
-    // Só toca se o ID da janela for diferente do que estava antes
-    if (idNovaJanela !== idJanelaAnterior.current) {
-      console.log("TROCA DE JANELA");
-
-      // Reinicia o áudio e toca
-      if (audioRef.current) {
+        // Resetamos o áudio para o início (caso o som anterior ainda esteja tocando)
         audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(err => console.error("Erro ao tocar áudio:", err));
-      }
 
-      // Atualiza o ref para a nova janela
-      idJanelaAnterior.current = idNovaJanela;
+        // Tentativa de play
+        audioRef.current.play().catch(err => {
+          console.warn("⚠️ O navegador bloqueou o som. Clique na página primeiro!", err);
+        });
+
+        // Atualizamos o "rastreador" para a nova janela
+        idJanelaAnterior.current = idAtual;
+      }
     }
   }, [janelaAtual, audioAtivado]);
 
