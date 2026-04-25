@@ -49,7 +49,7 @@ export default function PainelBoxes() {
   oscillator.stop(ctx.currentTime + 0.5);
 };
 
-  //Estados de audio
+  // Estados de audio para useEffects abaixo
   const [audioAtivado, setAudioAtivado] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const idJanelaAnterior = useRef<string | number | null>(null);
